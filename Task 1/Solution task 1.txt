@@ -1,0 +1,169 @@
+1.      List full details of all hotels.
+
+ hotel_no |       name       |   city
+----------+------------------+----------
+ H111     | Empire Hotel     | New York
+ H235     | Park Place       | New York
+ H432     | Brownstone Hotel | Toronto
+ H498     | James Plaza      | Toronto
+ H193     | Devon Hotel      | Boston
+ H437     | Clairmont Hotel  | Boston
+
+2.      List full details of all hotels in New York.
+
+postgres=# select * from hotel_table where city='New York';
+ hotel_no |     name     |   city
+----------+--------------+----------
+ H111     | Empire Hotel | New York
+ H235     | Park Place   | New York
+
+
+3.      List the names and cities of all guests, ordered according to their cities.
+
+postgres=# select name, city from guest_table order by city;
+     name      |     city
+---------------+--------------
+ Robert Swift  | Atlanta
+ Tara Cummings | Baltimore
+ Edward Cane   | Baltimore
+ Tom Hancock   | Philadelphia
+ Adam Wayne    | Pittsburgh
+ Vanessa Parry | Pittsburgh
+
+
+4.      List all details for non-smoking rooms in ascending order of price.
+
+postgres=# select * from room_table where type='N' order by price;
+ room_no | hotel_no | type | price
+---------+----------+------+--------
+     257 | H437     | N    | 140.00
+     412 | H111     | N    | 145.00
+     223 | H437     | N    | 155.00
+     345 | H498     | N    | 160.00
+    1201 | H193     | N    | 175.00
+    1267 | H235     | N    | 175.00
+     467 | H498     | N    | 180.00
+    1289 | H235     | N    | 195.00
+
+
+5.      List the number of hotels there are.
+
+postgres=# select count(hotel_no) as total_hotels from hotel_table;
+ total_hotels
+--------------
+            6
+
+
+
+6.      List the cities in which guests live. Each city should be listed only once.
+
+postgres=# select distinct city as cities from guest_table;
+    cities
+--------------
+ Pittsburgh
+ Philadelphia
+ Baltimore
+ Atlanta
+
+
+7.      List the average price of a room.
+
+postgres=# select avg(price) as average_room_price from room_table;
+  average_room_price
+----------------------
+ 155.6666666666666667
+
+
+8.      List hotel names, their room numbers, and the type of that room.
+
+postgres=# select h.name as hotel_names, r.room_no as room_number, r.type
+ as room_type from hotel_table h join room_table r on h.hotel_no=r.hotel_
+no;
+   hotel_names    | room_number | room_type
+------------------+-------------+-----------
+ Empire Hotel     |         313 | S
+ Empire Hotel     |         412 | N
+ Park Place       |        1267 | N
+ Park Place       |        1289 | N
+ Brownstone Hotel |         876 | S
+ Brownstone Hotel |         898 | S
+ James Plaza      |         345 | N
+ James Plaza      |         467 | N
+ Devon Hotel      |        1001 | S
+ Devon Hotel      |        1201 | N
+ Clairmont Hotel  |         257 | N
+ Clairmont Hotel  |         223 | N
+
+
+9.      List the hotel names, booking dates, and room numbers for all hotels in New York.
+
+postgres=# select h.name as hotel_name, b.date_from as booking_start_date, b.date_to as booking_end_date, b.room_no as room_number from hotel_table h join booking_table b on h.hotel_no=b.hotel_no;
+   hotel_name    | booking_start_date | booking_end_date | room_number
+-----------------+--------------------+------------------+-------------
+ Empire Hotel    | 1999-08-10         | 1999-08-15       |         412
+ Empire Hotel    | 1999-08-18         | 1999-08-21       |         412
+ Park Place      | 1999-09-05         | 1999-09-12       |        1267
+ James Plaza     | 1999-09-15         | 1999-09-18       |         467
+ James Plaza     | 1999-11-30         | 1999-12-02       |         345
+ James Plaza     | 1999-11-03         | 1999-11-05       |         345
+ Devon Hotel     | 1999-11-15         | 1999-11-19       |        1001
+ Devon Hotel     | 1999-09-12         | 1999-09-14       |        1001
+ Devon Hotel     | 1999-10-01         | 1999-10-06       |        1201
+ Clairmont Hotel | 1999-10-04         | 1999-10-06       |         223
+ Clairmont Hotel | 1999-09-14         | 1999-09-17       |         223
+
+
+10.  What is the number of bookings that started in the month of September?
+
+postgres=# select count(date_from) as number_of_bookings_in_september from booking_table where date_from>='1999-09-01' and date_from<='1999-09-30'
+;
+ number_of_bookings_in_september
+---------------------------------
+                               4
+
+
+11.  List the names and cities of guests who began a stay in New York in August.
+
+postgres=# select g.name, g.city from guest_table g join booking_table b on g.guest_no=b.guest_no join hotel_table h on b.hotel_no=h.hotel_no where extract(month from b.date_from)=8 and h.city='New York';
+     name      |    city
+---------------+------------
+ Adam Wayne    | Pittsburgh
+ Tara Cummings | Baltimore
+
+
+12.  List the hotel names and room numbers of any hotel rooms that have not been booked.
+
+postgres=# select h.name from hotel_table h left join booking_table b on h.hotel_no=b.hotel_no where b.hotel_no is null;
+       name
+------------------
+ Brownstone Hotel
+
+
+13.  List the hotel name and city of the hotel with the highest priced room.
+
+postgres=# select h.name, h.city from hotel_table h join room_table r on h.hotel_no=r.hotel_no where r.price=(select max(price) from room_table);
+    name    |   city
+------------+----------
+ Park Place | New York
+
+
+14.  List hotel names, room numbers, cities, and prices for hotels that have rooms with prices lower than the lowest priced room in a Boston hotel.
+
+postgres=# select h.name, r.room_no, h.city, r.price from hotel_table h join room_table r on h.hotel_no = r.hotel_no where r.price < (select min(price) from room_table where hotel_no in (select hotel_no from hotel_table where city = 'Boston'));
+       name       | room_no |  city   | price
+------------------+---------+---------+--------
+ Brownstone Hotel |     876 | Toronto | 124.00
+ Brownstone Hotel |     898 | Toronto | 124.00
+
+
+15.  List the average price of a room grouped by city.
+
+
+postgres=# select h.city, avg(r.price) as average_price from room_table r join hotel_table h on r.hotel_no=h.hotel_no group by h.city;
+   city   |    average_price
+----------+----------------------
+ New York | 165.0000000000000000
+ Boston   | 155.0000000000000000
+ Toronto  | 147.0000000000000000
+
+ 
